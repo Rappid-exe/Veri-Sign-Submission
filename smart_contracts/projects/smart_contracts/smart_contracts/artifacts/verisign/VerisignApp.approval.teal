@@ -1,0 +1,88 @@
+#pragma version 11
+#pragma typetrack false
+
+// algopy.arc4.ARC4Contract.approval_program() -> uint64:
+main:
+    // smart_contracts/verisign/contract.py:18
+    // class VerisignApp(ARC4Contract):
+    txn NumAppArgs
+    bz main___algopy_default_create@7
+    pushbytes 0x913c3f41 // method "attest(byte[])(address,uint64)"
+    txna ApplicationArgs 0
+    match main_attest_route@5
+    err
+
+main_attest_route@5:
+    // smart_contracts/verisign/contract.py:34
+    // @abimethod()
+    txn OnCompletion
+    !
+    txn ApplicationID
+    &&
+    assert // OnCompletion must be NoOp && can only call when not creating
+    b attest
+
+main___algopy_default_create@7:
+    txn OnCompletion
+    !
+    txn ApplicationID
+    !
+    &&
+    return // on error: OnCompletion must be NoOp && can only call when creating
+
+
+// smart_contracts.verisign.contract.VerisignApp.attest[routing]() -> void:
+attest:
+    // smart_contracts/verisign/contract.py:34
+    // @abimethod()
+    txna ApplicationArgs 1
+    dup
+    pushint 0 // 0
+    extract_uint16
+    pushint 2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for (len+uint8[])
+    extract 2 0
+    // smart_contracts/verisign/contract.py:51-53
+    // # Assert: Ensure this file hash hasn't been signed before
+    // # This implements a "first to sign wins" policy
+    // assert file_hash not in self.attestations, "Content already attested"
+    pushbytes 0x61
+    swap
+    concat
+    dup
+    box_len
+    bury 1
+    !
+    assert // Content already attested
+    // smart_contracts/verisign/contract.py:57
+    // creator_address=Address(Txn.sender),  # The wallet address calling this method
+    txn Sender
+    // smart_contracts/verisign/contract.py:58
+    // timestamp=UInt64(Global.latest_timestamp)  # Current block timestamp
+    global LatestTimestamp
+    itob
+    // smart_contracts/verisign/contract.py:55-59
+    // # Create: Instantiate a new Attestation struct
+    // new_attestation = Attestation(
+    //     creator_address=Address(Txn.sender),  # The wallet address calling this method
+    //     timestamp=UInt64(Global.latest_timestamp)  # Current block timestamp
+    // )
+    concat
+    // smart_contracts/verisign/contract.py:61-62
+    // # Store: Save the attestation to the BoxMap using file_hash as key
+    // self.attestations[file_hash] = new_attestation.copy()
+    swap
+    dig 1
+    box_put
+    // smart_contracts/verisign/contract.py:34
+    // @abimethod()
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
+    pushint 1 // 1
+    return
