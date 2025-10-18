@@ -10,11 +10,13 @@ import { Card } from "@/components/ui/card"
 import { Upload, CheckCircle2, XCircle } from "lucide-react"
 import { hashFile, formatAddress, formatTimestamp } from "@/lib/algorand"
 import { verifyAttestation, type Attestation } from "@/lib/contract"
+import { getCredentialForAddress, type Organization } from "@/lib/credentials"
 
 export default function VerifyPage() {
   const [file, setFile] = useState<File | null>(null)
   const [status, setStatus] = useState<"idle" | "verifying" | "verified" | "not-verified" | "error">("idle")
   const [attestation, setAttestation] = useState<Attestation | null>(null)
+  const [organization, setOrganization] = useState<Organization | null>(null)
   const [hash, setHash] = useState<string>("")
   const [logs, setLogs] = useState<string[]>([])
   const [error, setError] = useState<string>("")
@@ -28,6 +30,7 @@ export default function VerifyPage() {
       setFile(e.target.files[0])
       setStatus("idle")
       setAttestation(null)
+      setOrganization(null)
       setHash("")
       setLogs([])
       setError("")
@@ -62,6 +65,18 @@ export default function VerifyPage() {
         if (result.blockNumber) {
           addLog(`  BLOCK: #${result.blockNumber}`)
         }
+
+        // Check for credential ASA (Layer 2)
+        addLog(`> Checking for organization credentials...`)
+        const org = await getCredentialForAddress(result.creatorAddress)
+        
+        if (org) {
+          addLog(`✓ VERIFIED BY: ${org.name.toUpperCase()}`)
+          setOrganization(org)
+        } else {
+          addLog(`  No organization credential found`)
+        }
+
         addLog(`✓ VERIFICATION STATUS: TRUE`)
         
         setAttestation(result)
@@ -97,12 +112,23 @@ export default function VerifyPage() {
             {status === "verified" && (
               <div className="border-2 border-green-600 bg-green-50 p-6 mb-6 flex items-center gap-4">
                 <CheckCircle2 className="h-8 w-8 text-green-600 flex-shrink-0" />
-                <div>
+                <div className="flex-1">
                   <div className="font-bold text-xl text-green-900 uppercase tracking-tight">VERIFIED</div>
-                  <div className="font-mono text-sm text-green-800">
-                    This file has a valid signature on the blockchain.
-                  </div>
+                  {organization ? (
+                    <div className="font-mono text-sm text-green-800 mt-1">
+                      ✓ Verified by <span className="font-bold">{organization.name}</span>
+                    </div>
+                  ) : (
+                    <div className="font-mono text-sm text-green-800">
+                      This file has a valid signature on the blockchain.
+                    </div>
+                  )}
                 </div>
+                {organization && (
+                  <div className="px-4 py-2 bg-green-600 text-white font-mono text-xs uppercase tracking-widest font-bold">
+                    {organization.name}
+                  </div>
+                )}
               </div>
             )}
 
@@ -183,6 +209,15 @@ export default function VerifyPage() {
                   <h2 className="text-xl font-bold uppercase tracking-tight mb-6">Signature Details</h2>
 
                   <div className="space-y-4 font-mono text-sm">
+                    {organization && (
+                      <div className="p-4 bg-green-50 border-2 border-green-600 mb-4">
+                        <div className="text-xs uppercase tracking-widest text-green-700 mb-1">Verified Organization</div>
+                        <div className="font-bold text-lg text-green-900">{organization.name}</div>
+                        <div className="text-sm text-green-800 mt-1">{organization.description}</div>
+                        <div className="text-xs text-green-700 mt-2">Credential ASA: {organization.assetId}</div>
+                      </div>
+                    )}
+
                     <div>
                       <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">File Hash</div>
                       <div className="break-all">{hash}</div>

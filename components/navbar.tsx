@@ -46,6 +46,12 @@ export function Navbar() {
               Verify
             </Link>
             <Link
+              href="/admin"
+              className="text-sm font-mono uppercase tracking-widest hover:text-accent transition-colors"
+            >
+              Admin
+            </Link>
+            <Link
               href="#docs"
               className="text-sm font-mono uppercase tracking-widest hover:text-accent transition-colors"
             >
