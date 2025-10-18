@@ -1,7 +1,21 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useWallet } from "@/contexts/WalletContext"
+import { formatAddress } from "@/lib/algorand"
 
 export function Navbar() {
+  const { address, isConnected, connect, disconnect, isLoading } = useWallet()
+
+  const handleWalletClick = async () => {
+    if (isConnected) {
+      await disconnect()
+    } else {
+      await connect()
+    }
+  }
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b-2 border-foreground bg-background">
       <div className="container mx-auto px-4">
@@ -43,8 +57,10 @@ export function Navbar() {
             variant="outline"
             size="sm"
             className="border-2 border-foreground font-mono uppercase tracking-widest bg-transparent"
+            onClick={handleWalletClick}
+            disabled={isLoading}
           >
-            Connect Wallet
+            {isLoading ? 'Loading...' : isConnected && address ? formatAddress(address) : 'Connect Wallet'}
           </Button>
         </div>
       </div>

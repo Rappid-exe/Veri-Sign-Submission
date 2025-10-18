@@ -8,17 +8,29 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Upload, CheckCircle2, XCircle } from "lucide-react"
+import { hashFile, formatAddress, formatTimestamp } from "@/lib/algorand"
+import { verifyAttestation, type Attestation } from "@/lib/contract"
 
 export default function VerifyPage() {
   const [file, setFile] = useState<File | null>(null)
-  const [status, setStatus] = useState<"idle" | "verifying" | "verified" | "not-verified">("idle")
-  const [verificationData, setVerificationData] = useState<any>(null)
+  const [status, setStatus] = useState<"idle" | "verifying" | "verified" | "not-verified" | "error">("idle")
+  const [attestation, setAttestation] = useState<Attestation | null>(null)
+  const [hash, setHash] = useState<string>("")
+  const [logs, setLogs] = useState<string[]>([])
+  const [error, setError] = useState<string>("")
+
+  const addLog = (message: string) => {
+    setLogs(prev => [...prev, message])
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
       setStatus("idle")
-      setVerificationData(null)
+      setAttestation(null)
+      setHash("")
+      setLogs([])
+      setError("")
     }
   }
 
@@ -26,23 +38,45 @@ export default function VerifyPage() {
     if (!file) return
 
     setStatus("verifying")
+    setLogs([])
+    addLog("> Verification log:")
+    addLog("> Generating file hash...")
 
-    // Simulate verification
-    setTimeout(() => {
-      const isVerified = Math.random() > 0.3 // 70% chance of verified
+    try {
+      // Generate hash
+      const fileHash = await hashFile(file)
+      setHash(fileHash)
+      addLog(`✓ Hash generated successfully.`)
+      addLog(`  ${fileHash}`)
 
-      if (isVerified) {
-        setVerificationData({
-          hash: "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
-          creator: "0xA12C...9F7E",
-          timestamp: "2025-10-17 20:44:32 UTC",
-          block: "#19392922",
-        })
+      // Query blockchain
+      addLog("> Querying Algorand blockchain...")
+      addLog("> Checking signature database...")
+
+      const result = await verifyAttestation(fileHash)
+
+      if (result) {
+        addLog(`✓ Signature found on blockchain.`)
+        addLog(`  CREATOR: ${formatAddress(result.creatorAddress)}`)
+        addLog(`  TIMESTAMP: ${formatTimestamp(result.timestamp)}`)
+        if (result.blockNumber) {
+          addLog(`  BLOCK: #${result.blockNumber}`)
+        }
+        addLog(`✓ VERIFICATION STATUS: TRUE`)
+        
+        setAttestation(result)
         setStatus("verified")
       } else {
+        addLog(`✗ No signature found.`)
+        addLog(`✗ File not registered on blockchain.`)
+        addLog(`✗ VERIFICATION STATUS: FALSE`)
         setStatus("not-verified")
       }
-    }, 2500)
+    } catch (err: any) {
+      setError(err.message || "Verification failed")
+      setStatus("error")
+      addLog(`✗ Error: ${err.message}`)
+    }
   }
 
   return (
@@ -84,6 +118,16 @@ export default function VerifyPage() {
               </div>
             )}
 
+            {status === "error" && error && (
+              <div className="border-2 border-destructive bg-red-50 p-6 mb-6 flex items-center gap-4">
+                <XCircle className="h-8 w-8 text-destructive flex-shrink-0" />
+                <div>
+                  <div className="font-bold text-xl text-red-900 uppercase tracking-tight">ERROR</div>
+                  <div className="font-mono text-sm text-red-800">{error}</div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-6">
               {/* File Upload */}
               <Card className="border-2 border-foreground p-8">
@@ -109,71 +153,64 @@ export default function VerifyPage() {
                     Verify with Veri-Sign
                   </Button>
                 )}
+
+                {file && status === "verifying" && (
+                  <Button
+                    disabled
+                    className="w-full mt-6 bg-accent hover:bg-accent/90 text-foreground border-2 border-foreground font-mono uppercase tracking-widest"
+                  >
+                    Verifying...
+                  </Button>
+                )}
               </Card>
 
               {/* Terminal Output */}
-              {(status === "verifying" || status === "verified" || status === "not-verified") && (
+              {logs.length > 0 && (
                 <Card className="border-2 border-foreground p-8 bg-foreground text-background font-mono text-sm">
                   <div className="space-y-2">
-                    <div className="text-accent">{">"} Verification log:</div>
-
-                    {status === "verifying" && (
-                      <>
-                        <div className="pl-4 animate-pulse">Generating file hash...</div>
-                        <div className="pl-4 animate-pulse">Querying Algorand blockchain...</div>
-                        <div className="pl-4 animate-pulse">Checking signature database...</div>
-                      </>
-                    )}
-
-                    {status === "verified" && verificationData && (
-                      <>
-                        <div className="pl-4 text-green-400">✓ Hash generated successfully.</div>
-                        <div className="pl-4">{verificationData.hash}</div>
-                        <div className="pl-4 text-green-400 mt-4">✓ Signature found on blockchain.</div>
-                        <div className="pl-4">CREATOR: {verificationData.creator}</div>
-                        <div className="pl-4">TIMESTAMP: {verificationData.timestamp}</div>
-                        <div className="pl-4">BLOCK: {verificationData.block}</div>
-                        <div className="pl-4 text-green-400 mt-4 font-bold">✓ VERIFICATION STATUS: TRUE</div>
-                      </>
-                    )}
-
-                    {status === "not-verified" && (
-                      <>
-                        <div className="pl-4 text-green-400">✓ Hash generated successfully.</div>
-                        <div className="pl-4 text-red-400 mt-4">✗ No signature found.</div>
-                        <div className="pl-4 text-red-400">✗ File not registered on blockchain.</div>
-                        <div className="pl-4 text-red-400 mt-4 font-bold">✗ VERIFICATION STATUS: FALSE</div>
-                      </>
-                    )}
+                    {logs.map((log, i) => (
+                      <div key={i} className={log.startsWith('>') ? 'text-accent' : 'pl-4'}>
+                        {log}
+                      </div>
+                    ))}
                   </div>
                 </Card>
               )}
 
               {/* Verification Details */}
-              {status === "verified" && verificationData && (
+              {status === "verified" && attestation && (
                 <Card className="border-2 border-foreground p-8 bg-muted">
                   <h2 className="text-xl font-bold uppercase tracking-tight mb-6">Signature Details</h2>
 
                   <div className="space-y-4 font-mono text-sm">
                     <div>
                       <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">File Hash</div>
-                      <div className="break-all">{verificationData.hash}</div>
+                      <div className="break-all">{hash}</div>
                     </div>
 
                     <div>
                       <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Creator Wallet</div>
-                      <div>{verificationData.creator}</div>
+                      <div>{attestation.creatorAddress}</div>
                     </div>
 
                     <div>
                       <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Timestamp</div>
-                      <div>{verificationData.timestamp}</div>
+                      <div>{formatTimestamp(attestation.timestamp)}</div>
                     </div>
 
-                    <div>
-                      <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Block Number</div>
-                      <div>{verificationData.block}</div>
-                    </div>
+                    {attestation.blockNumber > 0 && (
+                      <div>
+                        <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Block Number</div>
+                        <div>#{attestation.blockNumber}</div>
+                      </div>
+                    )}
+
+                    {attestation.txId && (
+                      <div>
+                        <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Transaction ID</div>
+                        <div className="break-all">{attestation.txId}</div>
+                      </div>
+                    )}
                   </div>
                 </Card>
               )}
