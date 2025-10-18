@@ -10,10 +10,35 @@ export interface Organization {
 }
 
 // Registry of known credential ASAs
-// In production, this would be stored in a database
-export const CREDENTIAL_REGISTRY: Record<number, Organization> = {
-  // Example: 123456: { name: 'Reuters', assetId: 123456, description: 'Reuters Press Pass' }
+// Stored in localStorage for persistence across sessions
+const STORAGE_KEY = 'verisign-credentials'
+
+// Load credentials from localStorage
+function loadCredentials(): Record<number, Organization> {
+  if (typeof window === 'undefined') return {} // SSR safety
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch (error) {
+    console.error('Failed to load credentials from localStorage:', error)
+    return {}
+  }
 }
+
+// Save credentials to localStorage
+function saveCredentials(credentials: Record<number, Organization>): void {
+  if (typeof window === 'undefined') return // SSR safety
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials))
+  } catch (error) {
+    console.error('Failed to save credentials to localStorage:', error)
+  }
+}
+
+// Initialize registry from localStorage
+let CREDENTIAL_REGISTRY: Record<number, Organization> = loadCredentials()
 
 /**
  * Create a new credential ASA for an organization
@@ -192,11 +217,30 @@ export async function optInToCredential(
  */
 export function registerCredential(organization: Organization): void {
   CREDENTIAL_REGISTRY[organization.assetId] = organization
+  saveCredentials(CREDENTIAL_REGISTRY) // Persist to localStorage
 }
 
 /**
  * Get all registered credentials
  */
 export function getAllCredentials(): Organization[] {
+  // Refresh from localStorage in case it was updated elsewhere
+  CREDENTIAL_REGISTRY = loadCredentials()
   return Object.values(CREDENTIAL_REGISTRY)
+}
+
+/**
+ * Clear all registered credentials (for testing)
+ */
+export function clearAllCredentials(): void {
+  CREDENTIAL_REGISTRY = {}
+  saveCredentials(CREDENTIAL_REGISTRY)
+}
+
+/**
+ * Remove a specific credential from registry
+ */
+export function removeCredential(assetId: number): void {
+  delete CREDENTIAL_REGISTRY[assetId]
+  saveCredentials(CREDENTIAL_REGISTRY)
 }

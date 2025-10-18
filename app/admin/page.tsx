@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Shield, Send, Plus, AlertCircle } from "lucide-react"
 import { useWallet } from "@/contexts/WalletContext"
-import { createCredentialASA, distributeCredential, registerCredential, getAllCredentials, optInToCredential } from "@/lib/credentials"
+import { createCredentialASA, distributeCredential, registerCredential, getAllCredentials, optInToCredential, clearAllCredentials, removeCredential } from "@/lib/credentials"
 
 export default function AdminPage() {
   const { address, isConnected, connect } = useWallet()
@@ -30,7 +30,12 @@ export default function AdminPage() {
   const [assetIdToOptIn, setAssetIdToOptIn] = useState("")
   const [optInStatus, setOptInStatus] = useState<"idle" | "opting" | "complete" | "error">("idle")
 
-  const credentials = getAllCredentials()
+  const [credentials, setCredentials] = useState(getAllCredentials())
+
+  // Refresh credentials list
+  const refreshCredentials = () => {
+    setCredentials(getAllCredentials())
+  }
 
   const handleCreateCredential = async () => {
     if (!address || !orgName || !orgDescription) return
@@ -52,6 +57,7 @@ export default function AdminPage() {
       setCreateStatus("complete")
       setOrgName("")
       setOrgDescription("")
+      refreshCredentials() // Update the list
     } catch (err: any) {
       setCreateError(err.message || "Failed to create credential")
       setCreateStatus("error")
@@ -285,30 +291,89 @@ export default function AdminPage() {
 
             {/* Registered Credentials */}
             <Card className="border-2 border-foreground p-8">
-              <h2 className="text-xl font-bold uppercase tracking-tight mb-6">Registered Credentials</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold uppercase tracking-tight">Registered Credentials</h2>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={refreshCredentials}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 border-foreground font-mono uppercase tracking-widest bg-transparent"
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (confirm('Clear all registered credentials?')) {
+                        clearAllCredentials()
+                        refreshCredentials()
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="border-2 border-destructive text-destructive hover:bg-destructive hover:text-white font-mono uppercase tracking-widest bg-transparent"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
 
               {credentials.length === 0 ? (
                 <div className="text-center py-8 font-mono text-sm text-muted-foreground">
                   No credentials registered yet.
+                  <div className="mt-2 text-xs">
+                    Create a credential above to get started.
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {credentials.map((cred) => (
                     <div key={cred.assetId} className="p-4 border-2 border-foreground bg-muted">
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                           <div className="font-bold text-lg">{cred.name}</div>
                           <div className="font-mono text-sm text-muted-foreground">{cred.description}</div>
+                          <div className="font-mono text-xs text-muted-foreground mt-1">
+                            Asset ID: {cred.assetId}
+                          </div>
                         </div>
-                        <div className="font-mono text-sm">
-                          <div className="text-xs uppercase tracking-widest text-muted-foreground">Asset ID</div>
-                          <div className="font-bold">{cred.assetId}</div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => setAssetIdToDistribute(cred.assetId.toString())}
+                            variant="outline"
+                            size="sm"
+                            className="border-2 border-foreground font-mono uppercase tracking-widest bg-transparent text-xs"
+                          >
+                            Use for Distribution
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              if (confirm(`Remove ${cred.name} from registry?`)) {
+                                removeCredential(cred.assetId)
+                                refreshCredentials()
+                              }
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="border-2 border-destructive text-destructive hover:bg-destructive hover:text-white font-mono uppercase tracking-widest bg-transparent text-xs"
+                          >
+                            Remove
+                          </Button>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+
+              <div className="mt-6 p-4 bg-muted border-2 border-foreground">
+                <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Storage Info</div>
+                <div className="font-mono text-sm">
+                  <div>📍 Stored in browser localStorage</div>
+                  <div>🔄 Persists across page refreshes</div>
+                  <div>⚠️ Cleared if browser data is cleared</div>
+                </div>
+              </div>
             </Card>
           </div>
         </div>
