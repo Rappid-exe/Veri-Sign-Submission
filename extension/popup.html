@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veri-Sign</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 400px;
+      min-height: 300px;
+      font-family: 'IBM Plex Mono', 'Courier New', monospace;
+      background: #dcfce7;
+      color: #000;
+      padding: 0;
+    }
+
+    .header {
+      background: #000;
+      color: #dcfce7;
+      padding: 20px;
+      border-bottom: 2px solid #000;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .logo-icon {
+      width: 24px;
+      height: 24px;
+      background: #dcfce7;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+
+    .logo-icon div {
+      background: #000;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .instruction {
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .instruction::before {
+      content: '>';
+      position: absolute;
+      left: 0;
+      color: #fb923c;
+    }
+
+    .button {
+      width: 100%;
+      padding: 12px;
+      background: #000;
+      color: #dcfce7;
+      border: 2px solid #000;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .button:hover {
+      background: #dcfce7;
+      color: #000;
+    }
+
+    .button:active {
+      transform: translateY(2px);
+    }
+
+    .status {
+      font-size: 11px;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.05);
+      border-left: 3px solid #fb923c;
+      margin-top: 12px;
+    }
+
+    .footer {
+      padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.05);
+      border-top: 2px solid #000;
+      font-size: 10px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .link {
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <div class="title">VERI-SIGN®</div>
+    </div>
+    <div class="subtitle">Content Verification</div>
+  </div>
+
+  <div class="content">
+    <div class="section">
+      <div class="section-title">How to Use</div>
+      <div class="instruction">Right-click on any image or media</div>
+      <div class="instruction">Select "Verify with Veri-Sign"</div>
+      <div class="instruction">View verification result</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Quick Actions</div>
+      <button class="button" id="openWebApp">Open Web App</button>
+      <div class="status">
+        <strong>Status:</strong> Ready to verify
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">About</div>
+      <div class="instruction" style="padding-left: 0;">
+        Veri-Sign creates permanent, on-chain signatures for digital content using Algorand blockchain technology.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>Algorand TestNet • <a href="https://github.com" class="link" id="githubLink">GitHub</a></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
