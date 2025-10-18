@@ -366,14 +366,7 @@ export default function AdminPage() {
                 </div>
               )}
 
-              <div className="mt-6 p-4 bg-muted border-2 border-foreground">
-                <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Storage Info</div>
-                <div className="font-mono text-sm">
-                  <div>📍 Stored in browser localStorage</div>
-                  <div>🔄 Persists across page refreshes</div>
-                  <div>⚠️ Cleared if browser data is cleared</div>
-                </div>
-              </div>
+
             </Card>
           </div>
         </div>

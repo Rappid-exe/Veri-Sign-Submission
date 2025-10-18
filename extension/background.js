@@ -2,6 +2,24 @@
 
 const DEFAULT_APP_ID = 747976847;
 
+// Credential Registry - matches lib/credentials.ts
+// Add your registered credentials here
+const CREDENTIAL_REGISTRY = {
+  // Example: 123456: { name: 'Reuters', assetId: 123456, description: 'Reuters Press Pass' }
+  // Add credentials created in the admin panel here
+}
+
+// Load credentials from chrome.storage
+async function loadCredentials() {
+  try {
+    const result = await chrome.storage.local.get(['credentials'])
+    return result.credentials || CREDENTIAL_REGISTRY
+  } catch (error) {
+    console.error('Failed to load credentials:', error)
+    return CREDENTIAL_REGISTRY
+  }
+}
+
 // Create context menu on installation
 chrome.runtime.onInstalled.addListener(async () => {
   chrome.contextMenus.create({
@@ -169,10 +187,14 @@ async function verifyAttestation(fileHash) {
       timestamp = (timestamp * 256) + timestampBytes[i];
     }
 
+    // Check for credential ASA (Layer 2)
+    const organization = await checkCredentialForAddress(creatorAddress);
+
     return {
       creatorAddress,
       timestamp,
-      verified: true
+      verified: true,
+      organization: organization // Add organization info if found
     };
 
   } catch (error) {
@@ -181,6 +203,49 @@ async function verifyAttestation(fileHash) {
     }
     console.error('Blockchain query error:', error);
     throw new Error(`Blockchain query failed: ${error.message}`);
+  }
+}
+
+/**
+ * Check if an address holds a credential from any registered organization
+ */
+async function checkCredentialForAddress(address) {
+  try {
+    const credentials = await loadCredentials();
+    const credentialAssetIds = Object.keys(credentials).map(id => parseInt(id));
+    
+    if (credentialAssetIds.length === 0) {
+      return null; // No credentials registered
+    }
+
+    // Query Algorand Indexer for account assets
+    const indexerUrl = `https://testnet-idx.algonode.cloud/v2/accounts/${address}`;
+    const response = await fetch(indexerUrl);
+    
+    if (!response.ok) {
+      console.warn('Failed to query indexer for credentials');
+      return null;
+    }
+
+    const accountInfo = await response.json();
+    
+    if (!accountInfo.account || !accountInfo.account.assets) {
+      return null;
+    }
+
+    // Check if the account holds any registered credential ASAs
+    for (const asset of accountInfo.account.assets) {
+      const assetId = asset['asset-id'];
+      
+      if (credentials[assetId] && asset.amount > 0) {
+        return credentials[assetId]; // Return organization info
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Failed to check credentials:', error);
+    return null;
   }
 }
 

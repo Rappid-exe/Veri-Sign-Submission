@@ -9,6 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Open settings button
+  const openSettingsBtn = document.getElementById('openSettings');
+  openSettingsBtn.addEventListener('click', () => {
+    chrome.runtime.openOptionsPage();
+  });
+
   // GitHub link
   const githubLink = document.getElementById('githubLink');
   githubLink.addEventListener('click', (e) => {

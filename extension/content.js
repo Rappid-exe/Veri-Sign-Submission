@@ -11,10 +11,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     case 'VERIFICATION_COMPLETE':
       if (message.result) {
-        showVerificationOverlay(
-          `✓ VERIFIED\nCreator: ${formatAddress(message.result.creatorAddress)}\nTimestamp: ${formatTimestamp(message.result.timestamp)}`,
-          'success'
-        );
+        // Check if organization info is available (Layer 2)
+        if (message.result.organization) {
+          showVerificationOverlay(
+            `✓ VERIFIED BY ${message.result.organization.name.toUpperCase()}\n${message.result.organization.description}\nTimestamp: ${formatTimestamp(message.result.timestamp)}`,
+            'success',
+            message.result.organization.name
+          );
+        } else {
+          showVerificationOverlay(
+            `✓ VERIFIED\nCreator: ${formatAddress(message.result.creatorAddress)}\nTimestamp: ${formatTimestamp(message.result.timestamp)}`,
+            'success'
+          );
+        }
       } else {
         showVerificationOverlay('✗ NOT VERIFIED\nNo signature found on blockchain', 'error');
       }
@@ -25,7 +34,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-function showVerificationOverlay(message, status) {
+function showVerificationOverlay(message, status, organizationName = null) {
   // Remove existing overlay
   if (currentOverlay) {
     currentOverlay.remove();
@@ -84,6 +93,30 @@ function showVerificationOverlay(message, status) {
     letter-spacing: 1px;
   `;
 
+  // Add organization badge if available
+  if (organizationName && status === 'success') {
+    const badge = document.createElement('div');
+    badge.textContent = organizationName.toUpperCase();
+    badge.style.cssText = `
+      display: inline-block;
+      background: #16a34a;
+      color: white;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      border: 2px solid #000;
+    `;
+    overlay.appendChild(closeButton);
+    overlay.appendChild(title);
+    overlay.appendChild(badge);
+  } else {
+    overlay.appendChild(closeButton);
+    overlay.appendChild(title);
+  }
+
   // Add message
   const messageDiv = document.createElement('div');
   messageDiv.textContent = message;
@@ -91,8 +124,6 @@ function showVerificationOverlay(message, status) {
     margin-top: 8px;
   `;
 
-  overlay.appendChild(closeButton);
-  overlay.appendChild(title);
   overlay.appendChild(messageDiv);
   document.body.appendChild(overlay);
 
