@@ -70,7 +70,7 @@ async function handleVerification(info, tab) {
 }
 
 async function verifyAttestation(fileHash) {
-  const VERISIGN_APP_ID = 0; // TODO: Update with actual deployed app ID
+  const VERISIGN_APP_ID = 747976847; // TODO: Update with actual deployed app ID
   
   if (VERISIGN_APP_ID === 0) {
     throw new Error('Contract not deployed. Please configure the app ID.');
