@@ -1,12 +1,21 @@
 // Background service worker for Veri-Sign Chrome Extension
 
+const DEFAULT_APP_ID = 747976847;
+
 // Create context menu on installation
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
   chrome.contextMenus.create({
     id: 'verifyWithVerisign',
     title: 'Verify with Veri-Sign',
     contexts: ['image', 'video', 'audio', 'link']
   });
+  
+  // Initialize storage with default App ID if not set
+  const result = await chrome.storage.local.get(['appId']);
+  if (!result.appId) {
+    await chrome.storage.local.set({ appId: DEFAULT_APP_ID });
+    console.log('Initialized App ID:', DEFAULT_APP_ID);
+  }
 });
 
 // Handle context menu clicks
@@ -15,6 +24,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     handleVerification(info, tab);
   }
 });
+
+// Helper function to safely send messages to content script
+async function safeSendMessage(tabId, message) {
+  try {
+    await chrome.tabs.sendMessage(tabId, message);
+  } catch (error) {
+    // Content script might not be ready or tab might be closed
+    console.log('Could not send message to content script:', error.message);
+  }
+}
 
 async function handleVerification(info, tab) {
   let mediaUrl = null;
@@ -31,7 +50,7 @@ async function handleVerification(info, tab) {
   }
 
   // Send message to content script to show loading state
-  chrome.tabs.sendMessage(tab.id, {
+  await safeSendMessage(tab.id, {
     type: 'VERIFICATION_STARTED',
     url: mediaUrl
   });
@@ -52,29 +71,40 @@ async function handleVerification(info, tab) {
     const result = await verifyAttestation(fileHash);
 
     // Send result to content script
-    chrome.tabs.sendMessage(tab.id, {
+    await safeSendMessage(tab.id, {
       type: 'VERIFICATION_COMPLETE',
       url: mediaUrl,
       hash: fileHash,
       result: result
     });
+    
+    // Show notification with result
+    if (result) {
+      showNotification('✓ Verified', `Content verified on blockchain`);
+    } else {
+      showNotification('Not Found', 'No attestation found for this content');
+    }
 
   } catch (error) {
     console.error('Verification failed:', error);
-    chrome.tabs.sendMessage(tab.id, {
+    await safeSendMessage(tab.id, {
       type: 'VERIFICATION_ERROR',
       url: mediaUrl,
       error: error.message
     });
+    
+    // Show error notification
+    showNotification('Verification Failed', error.message);
   }
 }
 
 async function verifyAttestation(fileHash) {
-  const VERISIGN_APP_ID = 747976847; // TODO: Update with actual deployed app ID
+  // Get App ID from storage, fallback to default
+  const result = await chrome.storage.local.get(['appId']);
+  const VERISIGN_APP_ID = result.appId || DEFAULT_APP_ID;
   
-  if (VERISIGN_APP_ID === 0) {
-    throw new Error('Contract not deployed. Please configure the app ID.');
-  }
+  console.log('=== VERIFICATION START ===');
+  console.log('App ID:', VERISIGN_APP_ID);
 
   const cleanHex = fileHash.startsWith('0x') ? fileHash.slice(2) : fileHash;
   const hashBytes = new Uint8Array(cleanHex.length / 2);
@@ -82,22 +112,46 @@ async function verifyAttestation(fileHash) {
     hashBytes[i / 2] = parseInt(cleanHex.substr(i, 2), 16);
   }
 
+  // Create box name with 'a' prefix
   const boxNameArray = new Uint8Array([97, ...hashBytes]); // 97 = 'a' prefix
-  const boxName = btoa(String.fromCharCode(...boxNameArray));
-
+  
   try {
-    const response = await fetch(
-      `https://testnet-api.algonode.cloud/v2/applications/${VERISIGN_APP_ID}/box?name=${encodeURIComponent(boxName)}`
-    );
-
+    // Convert to base64 encoding - handle large arrays properly
+    let binaryString = '';
+    for (let i = 0; i < boxNameArray.length; i++) {
+      binaryString += String.fromCharCode(boxNameArray[i]);
+    }
+    const boxName = btoa(binaryString);
+    // Algorand API requires format: "encoding:value"
+    const boxNameParam = `b64:${boxName}`;
+    const encodedBoxName = encodeURIComponent(boxNameParam);
+    const apiUrl = `https://testnet-api.algonode.cloud/v2/applications/${VERISIGN_APP_ID}/box?name=${encodedBoxName}`;
+    
+    console.log('File hash:', fileHash);
+    console.log('Hash bytes length:', hashBytes.length);
+    console.log('Box name array length:', boxNameArray.length);
+    console.log('Box name (base64):', boxName);
+    console.log('Box name param:', boxNameParam);
+    console.log('Encoded box name:', encodedBoxName);
+    console.log('Full API URL:', apiUrl);
+    console.log('Making fetch request...');
+    
+    const response = await fetch(apiUrl);
+    
+    // Get response body for better error messages
+    const responseText = await response.text();
+    
     if (!response.ok) {
       if (response.status === 404) {
+        console.log('No attestation found (404)');
         return null; // No attestation found
       }
-      throw new Error('Failed to query blockchain');
+      console.error('API Error Response:', responseText);
+      throw new Error(`Failed to query blockchain: ${response.status} - ${responseText.substring(0, 100)}`);
     }
+    
+    const data = JSON.parse(responseText);
 
-    const data = await response.json();
     const value = Uint8Array.from(atob(data.value), c => c.charCodeAt(0));
 
     if (value.length < 40) {
@@ -125,7 +179,8 @@ async function verifyAttestation(fileHash) {
     if (error.message.includes('404') || error.message.includes('not found')) {
       return null;
     }
-    throw error;
+    console.error('Blockchain query error:', error);
+    throw new Error(`Blockchain query failed: ${error.message}`);
   }
 }
 
@@ -154,10 +209,14 @@ function encodeAddress(bytes) {
 }
 
 function showNotification(title, message) {
+  // Try with icon, fallback to console if it fails
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: 'icons/icon128.png',
+    iconUrl: chrome.runtime.getURL('icons/icon48.png'),
     title: title,
     message: message
+  }).catch(err => {
+    console.log('Notification:', title, '-', message);
+    console.log('Notification error:', err.message);
   });
 }
