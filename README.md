@@ -59,29 +59,30 @@ Veri-Sign creates a **"Web of Trust"** for digital content by combining blockcha
 ### Web Application
 
 #### Homepage
-![Homepage](screenshots/homepage.png)
+![Homepage](screenshots/homepage.jpg)
 *Clean, brutalist design with clear call-to-action*
 
 #### Create Signature
-![Create Signature](screenshots/create.png)
+![Create Signature](screenshots/create-signature.jpg)
 *Upload content, generate hash, create blockchain signature*
 
 #### Verify Content
-![Verify Content](screenshots/verify.png)
+![Verify Content](screenshots/verify-content.jpg)
 *Instant verification with organizational credentials*
 
 #### Admin Panel
-![Admin Panel](screenshots/admin.png)
+![Admin Panel](screenshots/admin-panel.jpg)
 *Manage credential ASAs and distribute to members*
 
 ### Chrome Extension
 
 #### Right-Click Verification
-![Extension Context Menu](screenshots/extension-context.png)
+![Extension Context Menu](screenshots/menu-option.jpg)
+
 *Verify any image with a right-click*
 
 #### Verification Result
-![Extension Result](screenshots/extension-result.png)
+![Extension Result](screenshots/verified-image.jpg)
 *On-page overlay showing verification status*
 
 ---
