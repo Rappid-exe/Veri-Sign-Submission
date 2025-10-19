@@ -5,8 +5,11 @@ const DEFAULT_APP_ID = 747976847;
 // Credential Registry - matches lib/credentials.ts
 // Add your registered credentials here
 const CREDENTIAL_REGISTRY = {
-  // Example: 123456: { name: 'Reuters', assetId: 123456, description: 'Reuters Press Pass' }
-  // Add credentials created in the admin panel here
+  747995284: { 
+    name: 'New York Times', 
+    assetId: 747995284, 
+    description: 'NYT Press' 
+  }
 }
 
 // Load credentials from chrome.storage
