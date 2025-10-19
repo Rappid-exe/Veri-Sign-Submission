@@ -240,8 +240,9 @@ async function checkCredentialForAddress(address) {
     for (const asset of accountInfo.account.assets) {
       const assetId = asset['asset-id'];
       
-      if (credentials[assetId] && asset.amount > 0) {
-        return credentials[assetId]; // Return organization info
+      // Check both number and string keys (JavaScript object key quirk)
+      if ((credentials[assetId] || credentials[assetId.toString()]) && asset.amount > 0) {
+        return credentials[assetId] || credentials[assetId.toString()]; // Return organization info
       }
     }
 
