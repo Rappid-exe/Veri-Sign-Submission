@@ -2,8 +2,7 @@
 
 <div align="center">
 
-![Veri-Sign Logo](<img width="90" height="34" alt="Veri-Sign Logo" src="https://github.com/user-attachments/assets/c787a24c-af88-4426-a3f8-4393674f2c32" />
-)
+![Veri-Sign Logo](screenshots/logo.png)
 
 **Create a Web of Trust for Digital Content**
 
