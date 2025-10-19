@@ -2,6 +2,12 @@
 
 # dependencies
 /node_modules
+node_modules/
+
+# lock files (bloat for submission)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
 
 # next.js
 /.next/
@@ -16,8 +22,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
+# env files (contains secrets)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -25,3 +32,30 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+.venv/
+venv/
+poetry.lock
+
+# Smart contracts artifacts (can be regenerated)
+smart_contracts/projects/smart_contracts/.venv/
+smart_contracts/projects/smart_contracts/smart_contracts/artifacts/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
