@@ -19,7 +19,7 @@
 
 ## 📹 Demo Video
 
-> **[(https://www.youtube.com/watch?v=BktvF5m3Oj0)]**
+> https://www.youtube.com/watch?v=BktvF5m3Oj0
 > 
 > A comprehensive walkthrough showing:
 > - How to create blockchain signatures for content
