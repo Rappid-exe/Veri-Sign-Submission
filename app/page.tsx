@@ -18,18 +18,17 @@ export default function HomePage() {
           <div className="container mx-auto px-4 py-24 md:py-32 relative">
             <div className="max-w-4xl">
               <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-6 border-l-2 border-foreground pl-4">
-                Referred by v0.dev
+                Blockchain Content Authentication
               </div>
 
               <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-balance">
-                Defense<sup className="text-2xl">®</sup>
+                Veri-Sign<sup className="text-2xl">®</sup>
                 <br />
-                Intelligence
+                Web of Trust
               </h1>
 
               <p className="text-lg md:text-xl mb-8 max-w-2xl font-mono leading-relaxed">
-                Veri-Sign builds software and verification systems that give creators, analysts, and commanders the
-                advantage in contested environments.
+                Create permanent, verifiable signatures for your digital content. Build trust through blockchain-verified credentials from recognized organizations.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-12">

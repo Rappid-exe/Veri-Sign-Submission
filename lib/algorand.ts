@@ -23,8 +23,8 @@ export const indexerClient = new algosdk.Indexer(
   ALGORAND_CONFIG.indexerPort
 )
 
-// Your deployed contract app ID (update this after deployment)
-export const VERISIGN_APP_ID = 0 // TODO: Update with actual app ID
+// Your deployed contract app ID
+export const VERISIGN_APP_ID = 747976847
 
 /**
  * Generate SHA-256 hash of a file

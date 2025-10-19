@@ -27,17 +27,26 @@ export async function createAttestation(
     // Convert hex hash to Uint8Array
     const hashBytes = hexToUint8Array(fileHash)
 
-    // Create application call transaction
-    const appArgs = [
-      new Uint8Array(Buffer.from('attest')), // Method name
-      hashBytes, // File hash argument
-    ]
+    // Create ABI method object
+    const abiMethod = new algosdk.ABIMethod({
+      name: 'attest',
+      args: [{ type: 'byte[]', name: 'file_hash' }],
+      returns: { type: '(address,uint64)' },
+    })
 
-    const txn = algosdk.makeApplicationNoOpTxnFromObject({
+    // Use AtomicTransactionComposer for ABI calls
+    const atc = new algosdk.AtomicTransactionComposer()
+    
+    atc.addMethodCall({
+      appID: VERISIGN_APP_ID,
+      method: abiMethod,
+      methodArgs: [hashBytes],
       sender: senderAddress,
       suggestedParams,
-      appIndex: VERISIGN_APP_ID,
-      appArgs,
+      signer: {
+        addr: senderAddress,
+        signTxn: async () => new Uint8Array(0), // Dummy, will be signed by Pera
+      } as any,
       boxes: [
         {
           appIndex: VERISIGN_APP_ID,
@@ -45,6 +54,10 @@ export async function createAttestation(
         },
       ],
     })
+
+    // Build the transaction group
+    const txnGroup = atc.buildGroup()
+    const txn = txnGroup[0].txn
 
     // Sign with Pera Wallet
     const signedTxn = await peraWallet.signTransaction([[{ txn }]])
